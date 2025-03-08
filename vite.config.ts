@@ -8,4 +8,7 @@ export default defineConfig({
   server: {
     host: true,
   },
+  preview: {
+    allowedHosts: ["luna-game-production.up.railway.app"],
+  },
 });
