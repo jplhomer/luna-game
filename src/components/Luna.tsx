@@ -235,12 +235,17 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
       newVelocity.normalize().multiplyScalar(SPEED * delta);
     }
 
+    // Simple height function for creating hills - matching the one in Backyard.tsx
+    const getTerrainHeight = (x: number, z: number): number => {
+      return Math.sin(x * 0.1) * Math.cos(z * 0.1) * 0.3;
+    };
+
     // Update position if not digging
     if (!isDigging) {
       lunaRef.current.position.add(newVelocity);
 
       // Enforce boundaries (fence)
-      const FENCE_SIZE = 11;
+      const FENCE_SIZE = 20; // Increased from 11 to 20 for a larger yard
       lunaRef.current.position.x = THREE.MathUtils.clamp(
         lunaRef.current.position.x,
         -FENCE_SIZE,
@@ -251,6 +256,16 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
         -FENCE_SIZE,
         FENCE_SIZE
       );
+
+      // Adjust Luna's height based on terrain
+      const x = lunaRef.current.position.x;
+      const z = lunaRef.current.position.z;
+
+      // Get height at Luna's position
+      const terrainHeight = getTerrainHeight(x, z);
+
+      // Set Luna's Y position based on terrain height with a small offset
+      lunaRef.current.position.y = terrainHeight + 0.05;
     }
 
     // Apply rotation
