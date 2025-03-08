@@ -1,7 +1,4 @@
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import { MeshReflectorMaterial } from "@react-three/drei";
-import * as THREE from "three";
 
 // Random position for trees and bushes
 const randomPosition = (min: number, max: number) => {

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -12,7 +12,6 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   const lunaRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
   const headRef = useRef<THREE.Mesh>(null);
-  const [velocity, setVelocity] = useState<THREE.Vector3>(new THREE.Vector3());
   const [rotation, setRotation] = useState(0);
 
   // Movement mechanics
@@ -39,7 +38,7 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   }, [isDigging]);
 
   // Animation loop
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!lunaRef.current) return;
 
     // Get keyboard input
@@ -53,13 +52,6 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
       Math.sin(rotation),
       0,
       Math.cos(rotation)
-    );
-
-    // Calculate right direction
-    const rightDir = new THREE.Vector3(
-      Math.sin(rotation + Math.PI / 2),
-      0,
-      Math.cos(rotation + Math.PI / 2)
     );
 
     // Reset velocity
@@ -141,11 +133,10 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
       <mesh
         ref={bodyRef}
         position={[0, 0.65, 0]}
-        // rotation={[0, 0, Math.PI / 2]}
         rotation={[0, 0, Math.PI / 2]}
         castShadow
       >
-        <capsuleGeometry args={[0.32, 0.2, 16, 16]} />
+        <capsuleGeometry args={[0.32, 1.0, 16, 16]} />
         <meshStandardMaterial color={colors.bodyTan} />
       </mesh>
 
