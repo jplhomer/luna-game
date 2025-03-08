@@ -3,8 +3,48 @@ import { OrbitControls, Sky } from "@react-three/drei";
 import Backyard from "./components/Backyard";
 import Luna from "./components/Luna";
 import KeyboardControls from "./components/KeyboardControls";
+import { useState, useEffect } from "react";
 
 function App() {
+  const [gamepadConnected, setGamepadConnected] = useState(false);
+  const [gamepadName, setGamepadName] = useState("");
+
+  // Gamepad connection detection
+  useEffect(() => {
+    const handleGamepadConnected = (e: GamepadEvent) => {
+      setGamepadConnected(true);
+      setGamepadName(e.gamepad.id);
+    };
+
+    const handleGamepadDisconnected = () => {
+      setGamepadConnected(false);
+      setGamepadName("");
+    };
+
+    window.addEventListener("gamepadconnected", handleGamepadConnected);
+    window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
+
+    // Check if gamepad is already connected
+    if (navigator.getGamepads) {
+      const gamepads = navigator.getGamepads();
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          setGamepadConnected(true);
+          setGamepadName(gamepads[i]?.id || "Unknown Controller");
+          break;
+        }
+      }
+    }
+
+    return () => {
+      window.removeEventListener("gamepadconnected", handleGamepadConnected);
+      window.removeEventListener(
+        "gamepaddisconnected",
+        handleGamepadDisconnected
+      );
+    };
+  }, []);
+
   return (
     <>
       <KeyboardControls>
@@ -49,6 +89,17 @@ function App() {
           <p>Space - Dig for bones</p>
           <p>Mouse - Rotate camera</p>
           <p>Scroll - Zoom in/out</p>
+
+          {gamepadConnected && (
+            <div className="gamepad-info">
+              <p>
+                <strong>Controller Connected</strong>
+              </p>
+              <p>Left Stick - Move Luna (inverted)</p>
+              <p>Right Stick - Control camera</p>
+              <p>A Button - Dig for bones</p>
+            </div>
+          )}
         </div>
       </div>
     </>

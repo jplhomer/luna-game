@@ -31,6 +31,7 @@
     "use-sound": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.13.10",
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.1.4"
   }

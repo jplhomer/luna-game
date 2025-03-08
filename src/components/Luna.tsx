@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import useSound from "use-sound";
@@ -14,6 +14,7 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   const bodyRef = useRef<THREE.Mesh>(null);
   const headRef = useRef<THREE.Mesh>(null);
   const [rotation, setRotation] = useState(0);
+  const { camera } = useThree();
 
   // Movement mechanics
   const SPEED = 3;
@@ -21,6 +22,12 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   const [isMoving, setIsMoving] = useState(false);
   const [isDigging, setIsDigging] = useState(false);
   const animation = useRef({ legRotation: 0, tailWag: 0, digProgress: 0 });
+
+  // Gamepad state
+  const [gamepadConnected, setGamepadConnected] = useState(false);
+  const gamepadRef = useRef<Gamepad | null>(null);
+  const GAMEPAD_DEADZONE = 0.1; // Ignore small joystick movements
+  const CAMERA_ROTATION_SPEED = 1.5;
 
   // Sound effects
   const [playPawSteps, { stop: stopPawSteps }] = useSound(
@@ -39,7 +46,43 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   // Set up keyboard controls
   const [, getKeys] = useKeyboardControls();
 
-  // Set up keyboard listener
+  // Set up gamepad connection listener
+  useEffect(() => {
+    const handleGamepadConnected = (e: GamepadEvent) => {
+      console.log("Gamepad connected:", e.gamepad.id);
+      setGamepadConnected(true);
+    };
+
+    const handleGamepadDisconnected = () => {
+      console.log("Gamepad disconnected");
+      setGamepadConnected(false);
+      gamepadRef.current = null;
+    };
+
+    window.addEventListener("gamepadconnected", handleGamepadConnected);
+    window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
+
+    // Check if gamepad is already connected
+    if (navigator.getGamepads) {
+      const gamepads = navigator.getGamepads();
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          setGamepadConnected(true);
+          break;
+        }
+      }
+    }
+
+    return () => {
+      window.removeEventListener("gamepadconnected", handleGamepadConnected);
+      window.removeEventListener(
+        "gamepaddisconnected",
+        handleGamepadDisconnected
+      );
+    };
+  }, []);
+
+  // Set up keyboard listener for digging
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " " && !isDigging) {
@@ -67,12 +110,59 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
     };
   }, [isMoving, playPawSteps, stopPawSteps]);
 
+  // Helper to get current gamepad state
+  const getGamepadState = () => {
+    if (navigator.getGamepads && gamepadConnected) {
+      const gamepads = navigator.getGamepads();
+      for (let i = 0; i < gamepads.length; i++) {
+        if (gamepads[i]) {
+          gamepadRef.current = gamepads[i];
+          return gamepads[i];
+        }
+      }
+    }
+    return null;
+  };
+
   // Animation loop
   useFrame((_, delta) => {
     if (!lunaRef.current) return;
 
     // Get keyboard input
     const { forward, backward, left, right } = getKeys();
+
+    // Initialize gamepad state
+    let gamepadForward = 0;
+    let gamepadSideways = 0;
+    let gamepadCameraX = 0;
+    let gamepadCameraY = 0;
+    let gamepadDigging = false;
+
+    // Check gamepad input
+    const gamepad = getGamepadState();
+    if (gamepad) {
+      // Left joystick (inverted as requested)
+      const leftY = -gamepad.axes[1]; // Inverted Y-axis
+      const leftX = gamepad.axes[0];
+
+      // Apply deadzone
+      gamepadForward = Math.abs(leftY) > GAMEPAD_DEADZONE ? leftY : 0;
+      gamepadSideways = Math.abs(leftX) > GAMEPAD_DEADZONE ? leftX : 0;
+
+      // Right joystick for camera
+      const rightX = gamepad.axes[2];
+      const rightY = gamepad.axes[3];
+
+      gamepadCameraX = Math.abs(rightX) > GAMEPAD_DEADZONE ? rightX : 0;
+      gamepadCameraY = Math.abs(rightY) > GAMEPAD_DEADZONE ? rightY : 0;
+
+      // Check button 0 (usually A or Cross) for digging
+      if (gamepad.buttons[0].pressed && !isDigging) {
+        setIsDigging(true);
+        animation.current.digProgress = 0;
+        playDigging();
+      }
+    }
 
     // Reset movement flag
     let moving = false;
@@ -84,23 +174,60 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
       Math.cos(rotation)
     );
 
+    // Calculate right direction
+    const rightDir = new THREE.Vector3(
+      Math.sin(rotation + Math.PI / 2),
+      0,
+      Math.cos(rotation + Math.PI / 2)
+    );
+
     // Reset velocity
     const newVelocity = new THREE.Vector3();
 
-    // Apply movement based on keys
-    if (forward) {
-      newVelocity.add(forwardDir);
+    // Apply movement based on keys or gamepad
+    if (forward || gamepadForward > 0) {
+      newVelocity.add(
+        forwardDir
+          .clone()
+          .multiplyScalar(gamepadForward > 0 ? gamepadForward : 1)
+      );
       moving = true;
     }
-    if (backward) {
-      newVelocity.sub(forwardDir);
+    if (backward || gamepadForward < 0) {
+      newVelocity.sub(
+        forwardDir
+          .clone()
+          .multiplyScalar(gamepadForward < 0 ? -gamepadForward : 1)
+      );
       moving = true;
     }
-    if (left) {
+
+    // Apply rotation from keyboard
+    if (left && !gamepadConnected) {
       setRotation(rotation + ROTATION_SPEED * delta);
     }
-    if (right) {
+    if (right && !gamepadConnected) {
       setRotation(rotation - ROTATION_SPEED * delta);
+    }
+
+    // Apply rotation from gamepad (sideways movement)
+    if (gamepadSideways !== 0) {
+      setRotation(rotation - gamepadSideways * ROTATION_SPEED * delta);
+    }
+
+    // Apply camera rotation from right joystick
+    if (gamepadCameraX !== 0 && camera) {
+      // Rotate the camera around Luna
+      const cameraOffset = new THREE.Vector3().subVectors(
+        camera.position,
+        lunaRef.current.position
+      );
+      const rotationMatrix = new THREE.Matrix4().makeRotationY(
+        -gamepadCameraX * CAMERA_ROTATION_SPEED * delta
+      );
+      cameraOffset.applyMatrix4(rotationMatrix);
+      camera.position.copy(lunaRef.current.position).add(cameraOffset);
+      camera.lookAt(lunaRef.current.position);
     }
 
     // Normalize and apply speed

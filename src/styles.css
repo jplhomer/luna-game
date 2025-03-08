@@ -60,3 +60,19 @@ body {
 .controls strong {
   color: #f8d56b;
 }
+
+.gamepad-info {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  animation: fadein 0.5s;
+}
+
+.gamepad-info p strong {
+  color: #4caf50;
+}
+
+@keyframes fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
