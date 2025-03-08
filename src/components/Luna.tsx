@@ -135,8 +135,8 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
     let gamepadForward = 0;
     let gamepadSideways = 0;
     let gamepadCameraX = 0;
-    let gamepadCameraY = 0;
-    let gamepadDigging = false;
+    // let gamepadCameraY = 0;
+    // let gamepadDigging = false;
 
     // Check gamepad input
     const gamepad = getGamepadState();
@@ -151,10 +151,10 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
 
       // Right joystick for camera
       const rightX = gamepad.axes[2];
-      const rightY = gamepad.axes[3];
+      // const rightY = gamepad.axes[3];
 
       gamepadCameraX = Math.abs(rightX) > GAMEPAD_DEADZONE ? rightX : 0;
-      gamepadCameraY = Math.abs(rightY) > GAMEPAD_DEADZONE ? rightY : 0;
+      // gamepadCameraY = Math.abs(rightY) > GAMEPAD_DEADZONE ? rightY : 0;
 
       // Check button 0 (usually A or Cross) for digging
       if (gamepad.buttons[0].pressed && !isDigging) {
@@ -175,11 +175,11 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
     );
 
     // Calculate right direction
-    const rightDir = new THREE.Vector3(
-      Math.sin(rotation + Math.PI / 2),
-      0,
-      Math.cos(rotation + Math.PI / 2)
-    );
+    // const rightDir = new THREE.Vector3(
+    //   Math.sin(rotation + Math.PI / 2),
+    //   0,
+    //   Math.cos(rotation + Math.PI / 2)
+    // );
 
     // Reset velocity
     const newVelocity = new THREE.Vector3();

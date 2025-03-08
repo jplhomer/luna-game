@@ -7,18 +7,15 @@ import { useState, useEffect } from "react";
 
 function App() {
   const [gamepadConnected, setGamepadConnected] = useState(false);
-  const [gamepadName, setGamepadName] = useState("");
 
   // Gamepad connection detection
   useEffect(() => {
-    const handleGamepadConnected = (e: GamepadEvent) => {
+    const handleGamepadConnected = (_e: GamepadEvent) => {
       setGamepadConnected(true);
-      setGamepadName(e.gamepad.id);
     };
 
     const handleGamepadDisconnected = () => {
       setGamepadConnected(false);
-      setGamepadName("");
     };
 
     window.addEventListener("gamepadconnected", handleGamepadConnected);
@@ -30,7 +27,6 @@ function App() {
       for (let i = 0; i < gamepads.length; i++) {
         if (gamepads[i]) {
           setGamepadConnected(true);
-          setGamepadName(gamepads[i]?.id || "Unknown Controller");
           break;
         }
       }
