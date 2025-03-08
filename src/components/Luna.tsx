@@ -6,15 +6,24 @@ import useSound from "use-sound";
 
 type LunaProps = {
   position?: [number, number, number];
+  controlCamera?: boolean;
 };
 
 // Define Luna character
-const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
+const Luna: React.FC<LunaProps> = ({
+  position = [0, 0, 0],
+  controlCamera = false,
+}) => {
   const lunaRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Mesh>(null);
   const headRef = useRef<THREE.Mesh>(null);
   const [rotation, setRotation] = useState(0);
   const { camera } = useThree();
+
+  // Camera settings
+  const cameraOffset = useRef(new THREE.Vector3(0, 3, -5)); // Behind and above
+  const cameraLookAt = useRef(new THREE.Vector3(0, 1, 0)); // Look at position offset
+  const cameraSmoothness = 0.1; // Lower = smoother camera (0.05 to 0.2 is good)
 
   // Movement mechanics
   const SPEED = 3;
@@ -216,18 +225,14 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
     }
 
     // Apply camera rotation from right joystick
-    if (gamepadCameraX !== 0 && camera) {
+    if (gamepadCameraX !== 0 && controlCamera) {
       // Rotate the camera around Luna
-      const cameraOffset = new THREE.Vector3().subVectors(
-        camera.position,
-        lunaRef.current.position
-      );
+      const cameraOffsetRotated = cameraOffset.current.clone();
       const rotationMatrix = new THREE.Matrix4().makeRotationY(
         -gamepadCameraX * CAMERA_ROTATION_SPEED * delta
       );
-      cameraOffset.applyMatrix4(rotationMatrix);
-      camera.position.copy(lunaRef.current.position).add(cameraOffset);
-      camera.lookAt(lunaRef.current.position);
+      cameraOffsetRotated.applyMatrix4(rotationMatrix);
+      cameraOffset.current.copy(cameraOffsetRotated);
     }
 
     // Normalize and apply speed
@@ -270,6 +275,36 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
 
     // Apply rotation
     lunaRef.current.rotation.y = rotation;
+
+    // Update camera position if controlling camera
+    if (controlCamera && camera) {
+      // Calculate the ideal camera position based on Luna's position and rotation
+      const idealCameraPosition = new THREE.Vector3();
+
+      // Calculate camera position, staying behind Luna based on her rotation
+      const cameraOffsetRotated = cameraOffset.current.clone();
+
+      // Create a rotation matrix based on Luna's current rotation
+      const rotationMatrix = new THREE.Matrix4().makeRotationY(rotation);
+
+      // Apply the rotation to the camera offset
+      cameraOffsetRotated.applyMatrix4(rotationMatrix);
+
+      // Add the rotated offset to Luna's position
+      idealCameraPosition
+        .copy(lunaRef.current.position)
+        .add(cameraOffsetRotated);
+
+      // Smoothly interpolate the camera position
+      camera.position.lerp(idealCameraPosition, cameraSmoothness);
+
+      // Calculate the look at position (slightly ahead of Luna)
+      const lookAtPos = new THREE.Vector3();
+      lookAtPos.copy(lunaRef.current.position).add(cameraLookAt.current);
+
+      // Make the camera look at Luna
+      camera.lookAt(lookAtPos);
+    }
 
     // Animate legs if moving
     setIsMoving(moving);
@@ -466,6 +501,14 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
             <meshStandardMaterial color="#8B4513" />
           </mesh>
         </group>
+      )}
+
+      {/* Gamepad connection indicator (visible in development) */}
+      {process.env.NODE_ENV === "development" && gamepadConnected && (
+        <mesh position={[0, 2, 0]}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshStandardMaterial color="green" />
+        </mesh>
       )}
     </group>
   );

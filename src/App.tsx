@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Sky } from "@react-three/drei";
+import { Sky } from "@react-three/drei";
 import Backyard from "./components/Backyard";
 import Luna from "./components/Luna";
 import KeyboardControls from "./components/KeyboardControls";
@@ -7,15 +7,18 @@ import { useState, useEffect } from "react";
 
 function App() {
   const [gamepadConnected, setGamepadConnected] = useState(false);
+  const [gamepadName, setGamepadName] = useState("");
 
   // Gamepad connection detection
   useEffect(() => {
-    const handleGamepadConnected = (_e: GamepadEvent) => {
+    const handleGamepadConnected = (e: GamepadEvent) => {
       setGamepadConnected(true);
+      setGamepadName(e.gamepad.id);
     };
 
     const handleGamepadDisconnected = () => {
       setGamepadConnected(false);
+      setGamepadName("");
     };
 
     window.addEventListener("gamepadconnected", handleGamepadConnected);
@@ -27,6 +30,7 @@ function App() {
       for (let i = 0; i < gamepads.length; i++) {
         if (gamepads[i]) {
           setGamepadConnected(true);
+          setGamepadName(gamepads[i]?.id || "Unknown Controller");
           break;
         }
       }
@@ -44,7 +48,15 @@ function App() {
   return (
     <>
       <KeyboardControls>
-        <Canvas shadows camera={{ position: [0, 5, 10], fov: 50 }}>
+        <Canvas
+          shadows
+          camera={{
+            position: [0, 3, 10], // Initial camera position, will be controlled by Luna component
+            fov: 60,
+            near: 0.1,
+            far: 1000,
+          }}
+        >
           <ambientLight intensity={0.5} />
           <directionalLight
             position={[10, 10, 5]}
@@ -59,16 +71,8 @@ function App() {
           {/* Game world */}
           <Backyard />
 
-          {/* Luna character */}
-          <Luna position={[0, 0, 0]} />
-
-          {/* Camera controls */}
-          <OrbitControls
-            enablePan={false}
-            maxPolarAngle={Math.PI / 2 - 0.1}
-            minDistance={3}
-            maxDistance={15}
-          />
+          {/* Luna character with camera control */}
+          <Luna position={[0, 0, 0]} controlCamera={true} />
         </Canvas>
       </KeyboardControls>
       <div className="game-ui">
@@ -83,16 +87,14 @@ function App() {
           </p>
           <p>WASD / Arrow Keys - Move Luna</p>
           <p>Space - Dig for bones</p>
-          <p>Mouse - Rotate camera</p>
-          <p>Scroll - Zoom in/out</p>
 
           {gamepadConnected && (
             <div className="gamepad-info">
               <p>
-                <strong>Controller Connected</strong>
+                <strong>Controller Connected:</strong> {gamepadName}
               </p>
               <p>Left Stick - Move Luna (inverted)</p>
-              <p>Right Stick - Control camera</p>
+              <p>Right Stick - Look around</p>
               <p>A Button - Dig for bones</p>
             </div>
           )}
