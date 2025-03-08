@@ -19,13 +19,16 @@
   "dependencies": {
     "@react-three/drei": "^10.0.4",
     "@react-three/fiber": "^9.1.0",
+    "@types/howler": "^2.2.12",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@types/three": "^0.174.0",
+    "howler": "^2.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.174.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "use-sound": "^5.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

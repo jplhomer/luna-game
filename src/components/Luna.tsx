@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
+import useSound from "use-sound";
 
 type LunaProps = {
   position?: [number, number, number];
@@ -21,6 +22,20 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
   const [isDigging, setIsDigging] = useState(false);
   const animation = useRef({ legRotation: 0, tailWag: 0, digProgress: 0 });
 
+  // Sound effects
+  const [playPawSteps, { stop: stopPawSteps }] = useSound(
+    "/sounds/paw_steps.mp3",
+    {
+      volume: 0.5,
+      loop: true,
+      interrupt: true,
+    }
+  );
+
+  const [playDigging] = useSound("/sounds/digging.mp3", {
+    volume: 0.7,
+  });
+
   // Set up keyboard controls
   const [, getKeys] = useKeyboardControls();
 
@@ -30,12 +45,27 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
       if (e.key === " " && !isDigging) {
         setIsDigging(true);
         animation.current.digProgress = 0;
+        playDigging(); // Play digging sound when spacebar is pressed
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDigging]);
+  }, [isDigging, playDigging]);
+
+  // Play/stop walking sounds based on movement state
+  useEffect(() => {
+    if (isMoving) {
+      playPawSteps();
+    } else {
+      stopPawSteps();
+    }
+
+    // Cleanup function to stop sounds when component unmounts
+    return () => {
+      stopPawSteps();
+    };
+  }, [isMoving, playPawSteps, stopPawSteps]);
 
   // Animation loop
   useFrame((_, delta) => {
