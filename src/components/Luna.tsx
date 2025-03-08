@@ -136,7 +136,7 @@ const Luna: React.FC<LunaProps> = ({ position = [0, 0, 0] }) => {
         rotation={[0, 0, Math.PI / 2]}
         castShadow
       >
-        <capsuleGeometry args={[0.32, 1.0, 16, 16]} />
+        <capsuleGeometry args={[0.32, 0.2, 16, 16]} />
         <meshStandardMaterial color={colors.bodyTan} />
       </mesh>
 
