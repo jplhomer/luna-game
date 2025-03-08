@@ -491,14 +491,6 @@ const Luna: React.FC<LunaProps> = ({
           </mesh>
         </group>
       )}
-
-      {/* Gamepad connection indicator (visible in development) */}
-      {process.env.NODE_ENV === "development" && gamepadConnected && (
-        <mesh position={[0, 2, 0]}>
-          <sphereGeometry args={[0.1, 8, 8]} />
-          <meshStandardMaterial color="green" />
-        </mesh>
-      )}
     </group>
   );
 };
